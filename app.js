@@ -1,3 +1,21 @@
+// Configuration
+const API_BASE_URL = 'https://thechaiexperiment-sencha.hf.space';
+let lastAnalysisId = null;
+let currentDocs = null;
+
+// Initialize Mermaid
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'default',
+  fontFamily: 'Inter, sans-serif',
+  themeVariables: {
+    primaryColor: '#f6fbf7',
+    primaryBorderColor: '#dbead6',
+    primaryTextColor: '#3a3a2c',
+    lineColor: '#5e7d4a'
+  }
+});
+
 // Tab functionality for Try Section
 const tryTabs = document.querySelectorAll('.try-tab');
 const tryPanels = document.querySelectorAll('.try-panel');
@@ -24,131 +42,423 @@ document.getElementById('try-btn').addEventListener('click', () => {
   document.querySelector('.try-section').scrollIntoView({ behavior: 'smooth' });
 });
 
-// Mock analysis functionality for demo purposes
-document.getElementById('try-analyze').addEventListener('click', () => {
+// Analysis functionality
+document.getElementById('try-analyze').addEventListener('click', async () => {
   const url = document.getElementById('try-url').value.trim();
+  const sourceType = document.getElementById('source-type').value;
+  const includeDiagrams = document.getElementById('include-diagrams').checked;
+  const deepAnalysis = document.getElementById('deep-analysis').checked;
+  
   if (!url) {
-    alert('Please enter a repository URL');
+    showErrorNotification('Please enter a repository URL');
     return;
   }
   
   const docViewer = document.getElementById('try-doc-viewer');
   docViewer.innerHTML = `
-    <h3>Analyzing ${url}</h3>
     <div class="loading-spinner">
       <div class="spinner"></div>
-      <p>Reading repository structure...</p>
+      <p>Analyzing repository...</p>
     </div>
   `;
   
-  // Simulate analysis delay
-  setTimeout(() => {
-    docViewer.innerHTML = `
-      <h3>Analysis Complete</h3>
-      <p>Found 12 Python files, 3 Markdown docs, and 2 Jupyter notebooks.</p>
-      <div class="analysis-summary">
-        <p><strong>Documentation Status:</strong> 65% complete</p>
-        <p><strong>Issues Found:</strong> 3 outdated examples, 2 broken links</p>
-      </div>
-      <p>Switch to the "Generate" tab to create improved documentation.</p>
-    `;
-  }, 2000);
-});
-
-// Mock generation functionality
-document.getElementById('try-generate').addEventListener('click', () => {
-  const tone = document.getElementById('tone-select').value;
-  const docViewer = document.getElementById('try-generated-docs');
-  
-  docViewer.innerHTML = `
-    <h3>Generating ${tone} documentation...</h3>
-    <div class="loading-spinner">
-      <div class="spinner"></div>
-      <p>This may take a minute...</p>
-    </div>
-  `;
-  
-  // Simulate generation delay
-  setTimeout(() => {
-    let sampleDoc = '';
-    if (tone === 'technical') {
-      sampleDoc = `
-        <h1>Project Documentation</h1>
-        <h2>API Reference</h2>
-        <h3>Class Example</h3>
-        <pre><code>class Example:
-    """Example class demonstrating functionality"""
+  try {
+    const response = await fetch(`${API_BASE_URL}/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        source_url: url,
+        source_type: sourceType,
+        include_diagrams: includeDiagrams,
+        deep_analysis: deepAnalysis
+      })
+    });
     
-    def __init__(self, param: str):
-        self.param = param</code></pre>
-      `;
-    } else if (tone === 'beginner') {
-      sampleDoc = `
-        <h1>Welcome to the Project!</h1>
-        <p>This project helps you do amazing things with just a few simple steps:</p>
-        <ol>
-          <li>First, install the package using pip</li>
-          <li>Then import the main class</li>
-          <li>Create an instance and start using it!</li>
-        </ol>
-      `;
-    } else {
-      sampleDoc = `
-        <h1>Research Project Documentation</h1>
-        <h2>Abstract</h2>
-        <p>This implementation demonstrates the novel approach described in our paper...</p>
-        <h2>Methodology</h2>
-        <p>The system architecture consists of three primary components...</p>
-      `;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Analysis failed');
     }
     
-    docViewer.innerHTML = sampleDoc + `
-      <div class="generated-actions">
-        <button class="primary-btn">Save to File</button>
-        <button class="secondary-btn">Copy to Clipboard</button>
+    const data = await response.json();
+    lastAnalysisId = data.analysis_id;
+    
+    // Display analysis results
+    displayAnalysisResults(data);
+    
+    // Enable generate tab
+    document.querySelector('.try-tab[data-tab="generate"]').disabled = false;
+    
+  } catch (error) {
+    console.error('Analysis error:', error);
+    docViewer.innerHTML = `
+      <div class="error-message">
+        <i class="fas fa-exclamation-circle"></i>
+        <p>Error: ${error.message}</p>
       </div>
     `;
-  }, 2500);
+  }
+});
+
+function displayAnalysisResults(data) {
+  const docViewer = document.getElementById('try-doc-viewer');
+  
+  let html = `
+    <h3>Analysis Results</h3>
+    <div class="analysis-summary">
+      <p><strong>Repository:</strong> ${data.repo_name || 'N/A'}</p>
+      <p><strong>Description:</strong> ${data.description || 'No description available'}</p>
+      <p><strong>Primary Language:</strong> ${data.primary_language || 'N/A'}</p>
+      <p><strong>Files Analyzed:</strong> ${data.file_count || 0}</p>
+    </div>
+  `;
+  
+  if (data.dependencies && data.dependencies.length > 0) {
+    html += `
+      <div class="analysis-section">
+        <h4>Dependencies</h4>
+        <ul class="dependency-list">
+          ${data.dependencies.map(dep => `<li>${dep.name} (${dep.version || 'N/A'})</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  }
+  
+  if (data.documentation_status) {
+    html += `
+      <div class="analysis-section">
+        <h4>Documentation Status</h4>
+        <p>${data.documentation_status.score || 0}/100</p>
+        <p>${data.documentation_status.summary || 'No summary available'}</p>
+        ${data.documentation_status.issues ? `
+          <div class="issues-list">
+            <h5>Issues Found:</h5>
+            <ul>
+              ${data.documentation_status.issues.map(issue => `<li>${issue}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+  
+  docViewer.innerHTML = html;
+}
+
+// Documentation generation
+document.getElementById('try-generate').addEventListener('click', async () => {
+  if (!lastAnalysisId) {
+    showErrorNotification('Please analyze a repository first');
+    return;
+  }
+  
+  const style = document.getElementById('doc-style').value;
+  const format = document.getElementById('output-format').value;
+  const includes = Array.from(document.querySelectorAll('input[name="include"]:checked'))
+                       .map(el => el.value);
+  const includeDiagrams = document.getElementById('include-diagrams').checked;
+  
+  const statusIndicator = document.getElementById('generate-status');
+  const docViewer = document.getElementById('try-generated-docs');
+  
+  statusIndicator.innerHTML = `
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Generating documentation...</p>
+    </div>
+  `;
+  
+  docViewer.innerHTML = '';
+  document.getElementById('download-actions').style.display = 'none';
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        analysis_id: lastAnalysisId,
+        style: style,
+        format: format,
+        includes: includes,
+        diagrams: includeDiagrams
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Generation failed');
+    }
+    
+    const data = await response.json();
+    
+    if (data.status === 'processing') {
+      // Start polling for status
+      pollGenerationStatus(data.request_id);
+      return;
+    }
+    
+    // Display generated docs immediately if ready
+    displayGeneratedDocs(data);
+    
+  } catch (error) {
+    console.error('Generation error:', error);
+    statusIndicator.innerHTML = `
+      <div class="error-message">
+        <i class="fas fa-exclamation-circle"></i>
+        <p>Error: ${error.message}</p>
+      </div>
+    `;
+  }
+});
+
+// Poll generation status
+async function pollGenerationStatus(requestId) {
+  const statusInfo = document.getElementById('status-info');
+  const statusIndicator = document.getElementById('generate-status');
+  
+  const checkStatus = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/status/${requestId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to check status');
+      }
+      
+      const data = await response.json();
+      
+      if (data.status === 'completed') {
+        statusInfo.innerHTML = `<p>Documentation generation complete!</p>`;
+        statusIndicator.innerHTML = `<p class="success">Documentation ready!</p>`;
+        displayGeneratedDocs(data.result);
+        return;
+      }
+      
+      if (data.status === 'failed') {
+        statusInfo.innerHTML = `<p class="error">Generation failed: ${data.message}</p>`;
+        statusIndicator.innerHTML = `
+          <div class="error-message">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Generation failed: ${data.message}</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Still processing
+      statusInfo.innerHTML = `
+        <p><strong>Status:</strong> ${data.status}</p>
+        <p><strong>Progress:</strong> ${data.progress || 0}%</p>
+        ${data.message ? `<p>${data.message}</p>` : ''}
+      `;
+      
+      // Continue polling
+      setTimeout(checkStatus, 2000);
+      
+    } catch (error) {
+      console.error('Status check error:', error);
+      statusInfo.innerHTML = `
+        <div class="error-message">
+          <i class="fas fa-exclamation-circle"></i>
+          <p>Error checking status: ${error.message}</p>
+        </div>
+      `;
+    }
+  };
+  
+  // Start polling
+  statusIndicator.innerHTML = '<p>Documentation generation started. Checking status...</p>';
+  checkStatus();
+}
+
+// Display generated documentation
+function displayGeneratedDocs(data) {
+  const docViewer = document.getElementById('try-generated-docs');
+  const actions = document.getElementById('download-actions');
+  
+  currentDocs = data;
+  
+  if (data.format === 'markdown') {
+    // Use marked.js to render markdown
+    docViewer.innerHTML = marked.parse(data.content);
+  } else if (data.format === 'html') {
+    docViewer.innerHTML = data.content;
+  } else {
+    // For other formats, show in pre tag
+    docViewer.innerHTML = `<pre>${data.content}</pre>`;
+  }
+  
+  // Initialize Mermaid diagrams if present
+  if (data.diagrams && typeof mermaid !== 'undefined') {
+    mermaid.init(undefined, '.mermaid');
+  }
+  
+  // Show download options
+  actions.style.display = 'flex';
+  
+  // Update status indicator
+  document.getElementById('generate-status').innerHTML = `
+    <p class="success">Documentation generated successfully!</p>
+  `;
+}
+
+// Download documentation
+document.getElementById('download-btn').addEventListener('click', async () => {
+  if (!currentDocs) {
+    showErrorNotification('No documentation to download');
+    return;
+  }
+  
+  const format = document.getElementById('output-format').value;
+  
+  try {
+    // In a real app, this would download from the server
+    // For demo, we'll create a client-side download
+    let content, mimeType, extension;
+    
+    switch (format) {
+      case 'markdown':
+        content = currentDocs.content;
+        mimeType = 'text/markdown';
+        extension = 'md';
+        break;
+      case 'html':
+        content = currentDocs.content;
+        mimeType = 'text/html';
+        extension = 'html';
+        break;
+      case 'pdf':
+        // In a real app, this would come from the server
+        showErrorNotification('PDF generation requires server-side processing');
+        return;
+      case 'docx':
+        // In a real app, this would come from the server
+        showErrorNotification('DOCX generation requires server-side processing');
+        return;
+      case 'txt':
+        content = currentDocs.content;
+        mimeType = 'text/plain';
+        extension = 'txt';
+        break;
+      default:
+        throw new Error('Unsupported format');
+    }
+    
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sencha-docs-${Date.now()}.${extension}`;
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+  } catch (error) {
+    console.error('Download error:', error);
+    showErrorNotification(`Download failed: ${error.message}`);
+  }
+});
+
+// Copy Markdown to clipboard
+document.getElementById('copy-markdown').addEventListener('click', () => {
+  if (!currentDocs || currentDocs.format !== 'markdown') {
+    showErrorNotification('No Markdown content to copy');
+    return;
+  }
+  
+  navigator.clipboard.writeText(currentDocs.content)
+    .then(() => {
+      const notification = document.createElement('div');
+      notification.className = 'success-notification';
+      notification.textContent = 'Markdown copied to clipboard!';
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+    })
+    .catch(err => {
+      showErrorNotification('Failed to copy to clipboard');
+      console.error('Clipboard error:', err);
+    });
+});
+
+// Status refresh
+document.getElementById('refresh-status').addEventListener('click', () => {
+  if (!lastAnalysisId) {
+    showErrorNotification('No analysis to check status for');
+    return;
+  }
+  
+  const statusInfo = document.getElementById('status-info');
+  statusInfo.innerHTML = `
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Checking status...</p>
+    </div>
+  `;
+  
+  // In a real app, this would check the actual status
+  setTimeout(() => {
+    statusInfo.innerHTML = `
+      <p><strong>Last Analysis:</strong> ${new Date().toLocaleString()}</p>
+      <p><strong>Status:</strong> Ready</p>
+    `;
+  }, 1000);
 });
 
 // Edit functionality
 document.getElementById('try-save').addEventListener('click', () => {
-  alert('Changes saved! (This is a demo - in a real app, changes would be saved to your account)');
+  const content = document.getElementById('try-edit-area').value;
+  if (!content.trim()) {
+    showErrorNotification('No content to save');
+    return;
+  }
+  
+  // In a real app, this would save to the server
+  localStorage.setItem('sencha_edited_docs', content);
+  
+  const notification = document.createElement('div');
+  notification.className = 'success-notification';
+  notification.textContent = 'Changes saved locally!';
+  document.body.appendChild(notification);
+  setTimeout(() => notification.remove(), 3000);
 });
 
-document.getElementById('try-download').addEventListener('click', () => {
-  alert('Download started! (This is a demo - in a real app, this would download a Markdown file)');
+// Load saved edits
+document.addEventListener('DOMContentLoaded', () => {
+  const savedContent = localStorage.getItem('sencha_edited_docs');
+  if (savedContent) {
+    document.getElementById('try-edit-area').value = savedContent;
+  }
+  
+  // Disable generate tab until analysis is done
+  document.querySelector('.try-tab[data-tab="generate"]').disabled = true;
 });
 
-// Smooth scrolling for anchor links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function(e) {
-    e.preventDefault();
-    document.querySelector(this.getAttribute('href')).scrollIntoView({
-      behavior: 'smooth'
-    });
-  });
-});
+// Error notification
+function showErrorNotification(message) {
+  const notification = document.createElement('div');
+  notification.className = 'error-notification';
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  setTimeout(() => notification.remove(), 5000);
+}
 
-// Loading spinner animation
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  .loading-spinner {
-    text-align: center;
-    margin: 2rem 0;
-  }
-  .spinner {
-    border: 4px solid rgba(94, 125, 74, 0.2);
-    border-top: 4px solid var(--primary-green);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 1rem;
-  }
-`;
-document.head.appendChild(style);
+// Success notification (for copy)
+document.head.insertAdjacentHTML('beforeend', `
+  <style>
+    .success-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #5e7d4a;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    }
+  </style>
+`);

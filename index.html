@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sencha – AI Documentation Assistant</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="sencha-app">
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="assets/sencha-logo.svg" alt="Sencha Logo" />
+        <span>Sencha</span>
+      </div>
+      <div class="sidebar-section">
+        <label for="source-url">Repo/Space URL</label>
+        <input type="text" id="source-url" placeholder="https://github.com/... or https://huggingface.co/spaces/..." />
+        <select id="source-type">
+          <option value="github">GitHub</option>
+          <option value="huggingface">Hugging Face Space</option>
+        </select>
+        <button class="primary-btn" id="analyze-btn">Analyze</button>
+        <div id="analyze-status" class="explanation"></div>
+      </div>
+      <div class="sidebar-section">
+        <h3>History</h3>
+        <ul id="history-list"></ul>
+      </div>
+      <div class="sidebar-footer">
+        <img src="assets/turtle-mascot.svg" alt="Sencha Turtle Mascot" class="mascot" />
+      </div>
+    </aside>
+    <main class="main-content">
+      <nav class="tabs">
+        <button class="tab active" data-tab="read">Read Mode</button>
+        <button class="tab" data-tab="generate">Generate</button>
+        <button class="tab" data-tab="compare">Compare</button>
+        <button class="tab" data-tab="edit">Edit</button>
+      </nav>
+      <section class="tab-content" id="read">
+        <h1>Welcome to Sencha</h1>
+        <p class="explanation">Your cozy AI-powered documentation assistant. Upload a repo to get started, or select a previous project from the sidebar history.</p>
+        <div class="doc-viewer" id="doc-viewer">AI-generated documentation will appear here.</div>
+      </section>
+      <section class="tab-content hidden" id="generate">
+        <h1>Generate Documentation</h1>
+        <p class="explanation">Let Sencha analyze your code and create beautiful, readable docs.</p>
+        <button class="primary-btn" id="generate-btn">Generate Docs</button>
+        <div id="generate-status"></div>
+      </section>
+      <section class="tab-content hidden" id="compare">
+        <h1>Compare Versions</h1>
+        <p class="explanation">See what changed between documentation versions.</p>
+        <div id="compare-viewer">Select two versions from history to compare.</div>
+      </section>
+      <section class="tab-content hidden" id="edit">
+        <h1>Edit Documentation</h1>
+        <p class="explanation">Tweak and improve your docs before exporting or sharing.</p>
+        <textarea id="edit-area" rows="12" placeholder="Edit your documentation here..."></textarea>
+        <button class="primary-btn" id="save-edit-btn">Save Changes</button>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html> 

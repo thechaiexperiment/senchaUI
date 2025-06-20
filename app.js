@@ -1,5 +1,5 @@
 // Configuration
-const API_BASE_URL = 'https://huggingface.co/spaces/thechaiexperiment/Sencha';
+const API_BASE_URL = 'https://thechaiexperiment-sencha.hf.space';
 
 // Tab switching logic
 const tabs = document.querySelectorAll('.tab');

@@ -6,6 +6,7 @@
   <title>Sencha – AI Documentation Assistant</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <header class="hero">
@@ -39,34 +40,84 @@
       
       <div class="try-container">
         <div class="try-tabs">
-          <button class="try-tab active" data-tab="read">Read Mode</button>
-          <button class="try-tab" data-tab="generate">Generate Docs</button>
+          <button class="try-tab active" data-tab="analyze">Analyze</button>
+          <button class="try-tab" data-tab="generate">Generate</button>
           <button class="try-tab" data-tab="compare">Compare</button>
           <button class="try-tab" data-tab="edit">Edit</button>
+          <button class="try-tab" data-tab="status">Status</button>
         </div>
         
         <div class="try-content">
-          <div class="try-panel active" id="read">
+          <div class="try-panel active" id="analyze">
             <div class="input-group">
               <input type="text" placeholder="https://github.com/... or https://huggingface.co/..." id="try-url">
+              <select id="source-type">
+                <option value="github">GitHub</option>
+                <option value="huggingface">Hugging Face</option>
+              </select>
               <button class="primary-btn" id="try-analyze">Analyze</button>
             </div>
+            <div class="analysis-options">
+              <h4>Analysis Options</h4>
+              <div class="option-group">
+                <label>
+                  <input type="checkbox" id="include-diagrams" checked>
+                  Include Diagrams (Mermaid)
+                </label>
+                <label>
+                  <input type="checkbox" id="deep-analysis" checked>
+                  Deep Code Analysis
+                </label>
+              </div>
+            </div>
             <div class="doc-viewer" id="try-doc-viewer">
-              <p>Documentation will appear here after analysis</p>
+              <div class="empty-state">
+                <i class="fas fa-search"></i>
+                <p>Analysis results will appear here</p>
+              </div>
             </div>
           </div>
           
           <div class="try-panel" id="generate">
-            <div class="tone-selector">
-              <label>Documentation Tone:</label>
-              <select id="tone-select">
-                <option value="technical">Technical</option>
-                <option value="beginner">Beginner Friendly</option>
-                <option value="academic">Academic</option>
-              </select>
+            <div class="generation-options">
+              <div class="option-row">
+                <div class="option-group">
+                  <label>Documentation Style:</label>
+                  <select id="doc-style">
+                    <option value="minimal">Minimal</option>
+                    <option value="developer" selected>Developer</option>
+                    <option value="academic">Academic</option>
+                  </select>
+                </div>
+                <div class="option-group">
+                  <label>Output Format:</label>
+                  <select id="output-format">
+                    <option value="markdown">Markdown</option>
+                    <option value="html">HTML</option>
+                    <option value="pdf">PDF</option>
+                    <option value="docx">DOCX</option>
+                    <option value="txt">Plain Text</option>
+                  </select>
+                </div>
+              </div>
+              <div class="option-row">
+                <div class="option-group">
+                  <label>Include:</label>
+                  <div class="checkbox-group">
+                    <label><input type="checkbox" name="include" value="api" checked> API Reference</label>
+                    <label><input type="checkbox" name="include" value="examples" checked> Code Examples</label>
+                    <label><input type="checkbox" name="include" value="setup" checked> Setup Guide</label>
+                  </div>
+                </div>
+              </div>
             </div>
             <button class="primary-btn" id="try-generate">Generate Documentation</button>
+            <div class="status-indicator" id="generate-status"></div>
             <div class="doc-viewer" id="try-generated-docs"></div>
+            <div class="generated-actions" id="download-actions" style="display:none;">
+              <button class="primary-btn" id="download-btn">Download Documentation</button>
+              <button class="secondary-btn" id="copy-markdown">Copy Markdown</button>
+            </div>
           </div>
           
           <div class="try-panel" id="compare">
@@ -77,6 +128,7 @@
               <select id="version2">
                 <option>Select version 2</option>
               </select>
+              <button class="secondary-btn" id="compare-btn">Compare</button>
             </div>
             <div class="compare-viewer" id="try-compare-viewer"></div>
           </div>
@@ -86,6 +138,16 @@
             <div class="edit-buttons">
               <button class="primary-btn" id="try-save">Save Changes</button>
               <button class="secondary-btn" id="try-download">Download</button>
+            </div>
+          </div>
+          
+          <div class="try-panel" id="status">
+            <div class="status-container">
+              <h3>Documentation Generation Status</h3>
+              <div class="status-info" id="status-info">
+                <p>No active generation jobs</p>
+              </div>
+              <button class="secondary-btn" id="refresh-status">Refresh Status</button>
             </div>
           </div>
         </div>
@@ -115,6 +177,16 @@
           <h3>Selectable tone</h3>
           <p>Technical, Beginner, or Academic style to match your audience.</p>
         </div>
+        <div class="feature-card">
+          <i class="fas fa-project-diagram"></i>
+          <h3>Auto-generated diagrams</h3>
+          <p>Includes architecture and flow diagrams in your documentation.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-history"></i>
+          <h3>Version comparison</h3>
+          <p>See what changed between different versions of your docs.</p>
+        </div>
       </div>
     </section>
 
@@ -128,6 +200,10 @@
         <div class="testimonial-card">
           <p>"As a student, Sencha helps me understand complex repos quickly. The beginner-friendly mode is perfect."</p>
           <div class="author">— Raj, Computer Science Student</div>
+        </div>
+        <div class="testimonial-card">
+          <p>"The academic-style docs helped me document my research project perfectly for my paper submission."</p>
+          <div class="author">— Dr. Chen, AI Researcher</div>
         </div>
       </div>
     </section>
@@ -149,8 +225,13 @@
         <img src="assets/turtle-mascot-small.svg" alt="Sencha Turtle">
       </div>
     </div>
+    <div class="footer-copyright">
+      <p>© 2023 Sencha Documentation Assistant. Part of The Chai Experiment.</p>
+    </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

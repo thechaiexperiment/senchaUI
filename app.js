@@ -64,9 +64,16 @@ analyzeBtn.addEventListener('click', async () => {
       include_diagrams: 'true'
     });
     
-    const res = await fetch(`${API_BASE_URL}/analyze?${params}`, {
+    const res = await fetch(`${API_BASE_URL}/analyze`, {
       method: 'POST',
-      mode: 'cors'
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        source_url: url,
+        source_type: type,
+        include_diagrams: true
+      })
     });
     
     if (!res.ok) {

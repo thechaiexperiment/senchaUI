@@ -64,6 +64,7 @@ analyzeBtn.addEventListener('click', async () => {
       include_diagrams: 'true'
     });
     
+    // In your analyzeBtn click handler:
     const res = await fetch(`${API_BASE_URL}/analyze`, {
       method: 'POST',
       headers: {

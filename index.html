@@ -5,63 +5,152 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sencha – AI Documentation Assistant</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-  <div class="sencha-app">
-    <aside class="sidebar">
+  <header class="hero">
+    <div class="hero-content">
       <div class="logo">
-        <img src="assets/sencha-logo.svg" alt="Sencha Logo" />
+        <img src="assets/sencha-logo.svg" alt="Sencha Logo">
+        <h1>Documentation help you can trust</h1>
+      </div>
+      <p class="tagline">Sencha reads, verifies, and writes clean docs — so you don't have to.</p>
+      <div class="cta-buttons">
+        <button class="primary-btn" id="try-btn">Try Sencha</button>
+        <button class="secondary-btn" id="demo-btn">Watch Demo</button>
+      </div>
+      <img src="assets/turtle-mascot.svg" alt="Sencha Turtle Mascot" class="mascot-hero">
+    </div>
+  </header>
+
+  <main>
+    <section class="demo-section">
+      <h2>See Sencha in action</h2>
+      <div class="video-container">
+        <iframe src="https://www.youtube.com/embed/example" frameborder="0" allowfullscreen></iframe>
+      </div>
+    </section>
+
+    <section class="try-section">
+      <div class="section-header">
+        <h2>Try Sencha Yourself</h2>
+        <p>Paste a GitHub or Hugging Face repo URL to get started</p>
+      </div>
+      
+      <div class="try-container">
+        <div class="try-tabs">
+          <button class="try-tab active" data-tab="read">Read Mode</button>
+          <button class="try-tab" data-tab="generate">Generate Docs</button>
+          <button class="try-tab" data-tab="compare">Compare</button>
+          <button class="try-tab" data-tab="edit">Edit</button>
+        </div>
+        
+        <div class="try-content">
+          <div class="try-panel active" id="read">
+            <div class="input-group">
+              <input type="text" placeholder="https://github.com/... or https://huggingface.co/..." id="try-url">
+              <button class="primary-btn" id="try-analyze">Analyze</button>
+            </div>
+            <div class="doc-viewer" id="try-doc-viewer">
+              <p>Documentation will appear here after analysis</p>
+            </div>
+          </div>
+          
+          <div class="try-panel" id="generate">
+            <div class="tone-selector">
+              <label>Documentation Tone:</label>
+              <select id="tone-select">
+                <option value="technical">Technical</option>
+                <option value="beginner">Beginner Friendly</option>
+                <option value="academic">Academic</option>
+              </select>
+            </div>
+            <button class="primary-btn" id="try-generate">Generate Documentation</button>
+            <div class="doc-viewer" id="try-generated-docs"></div>
+          </div>
+          
+          <div class="try-panel" id="compare">
+            <div class="compare-controls">
+              <select id="version1">
+                <option>Select version 1</option>
+              </select>
+              <select id="version2">
+                <option>Select version 2</option>
+              </select>
+            </div>
+            <div class="compare-viewer" id="try-compare-viewer"></div>
+          </div>
+          
+          <div class="try-panel" id="edit">
+            <textarea id="try-edit-area" placeholder="Edit your documentation here..."></textarea>
+            <div class="edit-buttons">
+              <button class="primary-btn" id="try-save">Save Changes</button>
+              <button class="secondary-btn" id="try-download">Download</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features-section">
+      <h2>Why developers love Sencha</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <i class="fas fa-book-open"></i>
+          <h3>Reads any public repo</h3>
+          <p>Works with GitHub, Hugging Face, and more. Just paste the URL.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-check-circle"></i>
+          <h3>Verifies existing docs</h3>
+          <p>Checks for accuracy, completeness, and outdated information.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-magic"></i>
+          <h3>Generates missing docs</h3>
+          <p>Creates beautiful Markdown documentation from your code.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-sliders-h"></i>
+          <h3>Selectable tone</h3>
+          <p>Technical, Beginner, or Academic style to match your audience.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="testimonials-section">
+      <h2>What our users say</h2>
+      <div class="testimonials-grid">
+        <div class="testimonial-card">
+          <p>"Sencha saved me hours of documentation work. The generated docs were so good I barely had to edit them."</p>
+          <div class="author">— Maya, Open Source Maintainer</div>
+        </div>
+        <div class="testimonial-card">
+          <p>"As a student, Sencha helps me understand complex repos quickly. The beginner-friendly mode is perfect."</p>
+          <div class="author">— Raj, Computer Science Student</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-content">
+      <div class="footer-logo">
+        <img src="assets/sencha-logo-small.svg" alt="Sencha Logo">
         <span>Sencha</span>
       </div>
-      <div class="sidebar-section">
-        <label for="source-url">Repo/Space URL</label>
-        <input type="text" id="source-url" placeholder="https://github.com/... or https://huggingface.co/spaces/..." />
-        <select id="source-type">
-          <option value="github">GitHub</option>
-          <option value="huggingface">Hugging Face Space</option>
-        </select>
-        <button class="primary-btn" id="analyze-btn">Analyze</button>
-        <div id="analyze-status" class="explanation"></div>
+      <div class="footer-links">
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+        <a href="#">Privacy</a>
+        <a href="https://thechaiexperiment.com">The Chai Experiment</a>
       </div>
-      <div class="sidebar-section">
-        <h3>History</h3>
-        <ul id="history-list"></ul>
+      <div class="footer-mascot">
+        <img src="assets/turtle-mascot-small.svg" alt="Sencha Turtle">
       </div>
-      <div class="sidebar-footer">
-        <img src="assets/turtle-mascot.svg" alt="Sencha Turtle Mascot" class="mascot" />
-      </div>
-    </aside>
-    <main class="main-content">
-      <nav class="tabs">
-        <button class="tab active" data-tab="read">Read Mode</button>
-        <button class="tab" data-tab="generate">Generate</button>
-        <button class="tab" data-tab="compare">Compare</button>
-        <button class="tab" data-tab="edit">Edit</button>
-      </nav>
-      <section class="tab-content" id="read">
-        <h1>Welcome to Sencha</h1>
-        <p class="explanation">Your cozy AI-powered documentation assistant. Upload a repo to get started, or select a previous project from the sidebar history.</p>
-        <div class="doc-viewer" id="doc-viewer">AI-generated documentation will appear here.</div>
-      </section>
-      <section class="tab-content hidden" id="generate">
-        <h1>Generate Documentation</h1>
-        <p class="explanation">Let Sencha analyze your code and create beautiful, readable docs.</p>
-        <button class="primary-btn" id="generate-btn">Generate Docs</button>
-        <div id="generate-status"></div>
-      </section>
-      <section class="tab-content hidden" id="compare">
-        <h1>Compare Versions</h1>
-        <p class="explanation">See what changed between documentation versions.</p>
-        <div id="compare-viewer">Select two versions from history to compare.</div>
-      </section>
-      <section class="tab-content hidden" id="edit">
-        <h1>Edit Documentation</h1>
-        <p class="explanation">Tweak and improve your docs before exporting or sharing.</p>
-        <textarea id="edit-area" rows="12" placeholder="Edit your documentation here..."></textarea>
-        <button class="primary-btn" id="save-edit-btn">Save Changes</button>
-      </section>
-    </main>
-  </div>
+    </div>
+  </footer>
+
   <script src="app.js"></script>
 </body>
-</html> 
+</html>

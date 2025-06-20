@@ -1,278 +1,154 @@
-// Configuration
-const API_BASE_URL = 'https://thechaiexperiment-sencha.hf.space';
+// Tab functionality for Try Section
+const tryTabs = document.querySelectorAll('.try-tab');
+const tryPanels = document.querySelectorAll('.try-panel');
 
-// Tab switching logic
-const tabs = document.querySelectorAll('.tab');
-const tabContents = document.querySelectorAll('.tab-content');
-
-tabs.forEach(tab => {
+tryTabs.forEach(tab => {
   tab.addEventListener('click', () => {
-    tabs.forEach(t => t.classList.remove('active'));
+    // Remove active class from all tabs and panels
+    tryTabs.forEach(t => t.classList.remove('active'));
+    tryPanels.forEach(p => p.classList.remove('active'));
+    
+    // Add active class to clicked tab and corresponding panel
     tab.classList.add('active');
-    tabContents.forEach(tc => tc.classList.add('hidden'));
-    document.getElementById(tab.dataset.tab).classList.remove('hidden');
+    document.getElementById(tab.dataset.tab).classList.add('active');
   });
 });
 
-// Sidebar history logic
-const historyList = document.getElementById('history-list');
-function addToHistory(repoName) {
-  const li = document.createElement('li');
-  li.textContent = repoName;
-  li.title = 'Click to load this repo';
-  li.addEventListener('click', () => {
-    document.getElementById('doc-viewer').textContent = `Loaded documentation for ${repoName}`;
-  });
-  historyList.prepend(li);
-}
+// Demo button functionality
+document.getElementById('demo-btn').addEventListener('click', () => {
+  document.querySelector('.demo-section').scrollIntoView({ behavior: 'smooth' });
+});
 
-// File upload logic
-const repoUpload = document.getElementById('repo-upload');
-if (repoUpload) {
-  repoUpload.addEventListener('change', (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length) {
-      addToHistory(files[0].name);
-      document.getElementById('doc-viewer').textContent = `Repo "${files[0].name}" uploaded. Ready to generate docs!`;
-    }
-  });
-}
+// Try button functionality
+document.getElementById('try-btn').addEventListener('click', () => {
+  document.querySelector('.try-section').scrollIntoView({ behavior: 'smooth' });
+});
 
-// Analyze logic - FIXED
-const analyzeBtn = document.getElementById('analyze-btn');
-const sourceUrlInput = document.getElementById('source-url');
-const sourceTypeSelect = document.getElementById('source-type');
-const analyzeStatus = document.getElementById('analyze-status');
-let lastAnalysisId = null;
-let lastAnalysis = null;
-
-analyzeBtn.addEventListener('click', async () => {
-  const url = sourceUrlInput.value.trim();
-  const type = sourceTypeSelect.value;
+// Mock analysis functionality for demo purposes
+document.getElementById('try-analyze').addEventListener('click', () => {
+  const url = document.getElementById('try-url').value.trim();
   if (!url) {
-    analyzeStatus.textContent = 'Please enter a repository or space URL.';
+    alert('Please enter a repository URL');
     return;
   }
   
-  analyzeStatus.textContent = 'Analyzing...';
+  const docViewer = document.getElementById('try-doc-viewer');
+  docViewer.innerHTML = `
+    <h3>Analyzing ${url}</h3>
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Reading repository structure...</p>
+    </div>
+  `;
   
-  try {
-    // Fixed: Use URL parameters to match backend signature
-    const params = new URLSearchParams({
-      source_url: url,
-      source_type: type,
-      include_diagrams: 'true'
-    });
-    
-    // In your analyzeBtn click handler:
-    const res = await fetch(`${API_BASE_URL}/analyze`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        source_url: url,
-        source_type: type,
-        include_diagrams: true
-      })
-    });
-    
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`${res.status}: ${errorText}`);
-    }
-    
-    const data = await res.json();
-    lastAnalysis = data;
-    lastAnalysisId = data.request_id || data.analysis_id || url;
-    
-    document.getElementById('doc-viewer').textContent = JSON.stringify(data, null, 2);
-    analyzeStatus.textContent = 'Analysis complete! You can now generate documentation.';
-    addToHistory(url);
-    
-  } catch (err) {
-    console.error('Analysis error:', err);
-    analyzeStatus.textContent = 'Error: ' + err.message;
-    
-    // Add specific error handling for common issues
-    if (err.message.includes('CORS')) {
-      analyzeStatus.textContent += ' (CORS issue - check if Space is running)';
-    } else if (err.message.includes('Failed to fetch')) {
-      analyzeStatus.textContent += ' (Network error - check if Space is accessible)';
-    }
-  }
-});
-
-// Generate docs button - FIXED
-const generateBtn = document.getElementById('generate-btn');
-if (generateBtn) {
-  generateBtn.addEventListener('click', async () => {
-    if (!lastAnalysisId) {
-      document.getElementById('generate-status').textContent = 'Please analyze a project first.';
-      return;
-    }
-    
-    document.getElementById('generate-status').textContent = 'Generating documentation...';
-    
-    try {
-      // Fixed: Use URL parameters for the generate endpoint
-      const params = new URLSearchParams({
-        analysis_id: lastAnalysisId,
-        style: 'minimal',
-        format: 'markdown'
-      });
-      
-      const res = await fetch(`${API_BASE_URL}/generate?${params}`, {
-        method: 'POST',
-        mode: 'cors'
-      });
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`${res.status}: ${errorText}`);
-      }
-      
-      const data = await res.json();
-      document.getElementById('doc-viewer').textContent = data.content || JSON.stringify(data, null, 2);
-      document.getElementById('generate-status').textContent = 'Documentation generated!';
-      
-    } catch (err) {
-      console.error('Generation error:', err);
-      document.getElementById('generate-status').textContent = 'Error: ' + err.message;
-    }
-  });
-}
-
-// Status check function - NEW
-async function checkStatus(requestId) {
-  try {
-    const res = await fetch(`${API_BASE_URL}/status/${requestId}`, {
-      method: 'GET',
-      mode: 'cors'
-    });
-    
-    if (!res.ok) {
-      throw new Error(`${res.status}: ${await res.text()}`);
-    }
-    
-    return await res.json();
-  } catch (err) {
-    console.error('Status check error:', err);
-    throw err;
-  }
-}
-
-// Download function - NEW (missing from original)
-async function downloadDocumentation(requestId, format = 'markdown') {
-  try {
-    const res = await fetch(`${API_BASE_URL}/download/${requestId}?format=${format}`, {
-      method: 'GET',
-      mode: 'cors'
-    });
-    
-    if (!res.ok) {
-      throw new Error(`${res.status}: ${await res.text()}`);
-    }
-    
-    // Handle file download
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `documentation.${format}`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    
-  } catch (err) {
-    console.error('Download error:', err);
-    throw err;
-  }
-}
-
-// Health check function - NEW
-async function checkHealth() {
-  try {
-    const res = await fetch(`${API_BASE_URL}/health`, {
-      method: 'GET',
-      mode: 'cors'
-    });
-    
-    if (!res.ok) {
-      throw new Error(`${res.status}: ${await res.text()}`);
-    }
-    
-    return await res.json();
-  } catch (err) {
-    console.error('Health check error:', err);
-    throw err;
-  }
-}
-
-// Edit/save logic
-const saveEditBtn = document.getElementById('save-edit-btn');
-if (saveEditBtn) {
-  saveEditBtn.addEventListener('click', () => {
-    const editArea = document.getElementById('edit-area');
-    if (editArea && editArea.value.trim()) {
-      // Store edited content
-      localStorage.setItem('edited_docs', editArea.value);
-      alert('Edits saved locally!');
-    } else {
-      alert('Nothing to save.');
-    }
-  });
-}
-
-// Load edited content if available
-document.addEventListener('DOMContentLoaded', () => {
-  const editArea = document.getElementById('edit-area');
-  const savedContent = localStorage.getItem('edited_docs');
-  if (editArea && savedContent) {
-    editArea.value = savedContent;
-  }
-});
-
-// Mascot animation
-const mascot = document.querySelector('.mascot');
-if (mascot) {
-  mascot.title = 'Sencha the Turtle: Your friendly doc assistant!';
-  mascot.addEventListener('mouseenter', () => {
-    mascot.style.transform = 'scale(1.08) rotate(-4deg)';
-    mascot.style.transition = 'transform 0.3s';
-  });
-  mascot.addEventListener('mouseleave', () => {
-    mascot.style.transform = 'scale(1) rotate(0)';
-  });
-}
-
-// Test connection on page load
-document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    const health = await checkHealth();
-    console.log('Backend connection successful:', health);
-  } catch (err) {
-    console.warn('Backend connection failed:', err.message);
-    // Show user-friendly notification
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background: #ff6b6b;
-      color: white;
-      padding: 10px;
-      border-radius: 5px;
-      z-index: 1000;
+  // Simulate analysis delay
+  setTimeout(() => {
+    docViewer.innerHTML = `
+      <h3>Analysis Complete</h3>
+      <p>Found 12 Python files, 3 Markdown docs, and 2 Jupyter notebooks.</p>
+      <div class="analysis-summary">
+        <p><strong>Documentation Status:</strong> 65% complete</p>
+        <p><strong>Issues Found:</strong> 3 outdated examples, 2 broken links</p>
+      </div>
+      <p>Switch to the "Generate" tab to create improved documentation.</p>
     `;
-    notification.textContent = 'Backend connection failed. Some features may not work.';
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 5000);
-  }
+  }, 2000);
 });
+
+// Mock generation functionality
+document.getElementById('try-generate').addEventListener('click', () => {
+  const tone = document.getElementById('tone-select').value;
+  const docViewer = document.getElementById('try-generated-docs');
+  
+  docViewer.innerHTML = `
+    <h3>Generating ${tone} documentation...</h3>
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>This may take a minute...</p>
+    </div>
+  `;
+  
+  // Simulate generation delay
+  setTimeout(() => {
+    let sampleDoc = '';
+    if (tone === 'technical') {
+      sampleDoc = `
+        <h1>Project Documentation</h1>
+        <h2>API Reference</h2>
+        <h3>Class Example</h3>
+        <pre><code>class Example:
+    """Example class demonstrating functionality"""
+    
+    def __init__(self, param: str):
+        self.param = param</code></pre>
+      `;
+    } else if (tone === 'beginner') {
+      sampleDoc = `
+        <h1>Welcome to the Project!</h1>
+        <p>This project helps you do amazing things with just a few simple steps:</p>
+        <ol>
+          <li>First, install the package using pip</li>
+          <li>Then import the main class</li>
+          <li>Create an instance and start using it!</li>
+        </ol>
+      `;
+    } else {
+      sampleDoc = `
+        <h1>Research Project Documentation</h1>
+        <h2>Abstract</h2>
+        <p>This implementation demonstrates the novel approach described in our paper...</p>
+        <h2>Methodology</h2>
+        <p>The system architecture consists of three primary components...</p>
+      `;
+    }
+    
+    docViewer.innerHTML = sampleDoc + `
+      <div class="generated-actions">
+        <button class="primary-btn">Save to File</button>
+        <button class="secondary-btn">Copy to Clipboard</button>
+      </div>
+    `;
+  }, 2500);
+});
+
+// Edit functionality
+document.getElementById('try-save').addEventListener('click', () => {
+  alert('Changes saved! (This is a demo - in a real app, changes would be saved to your account)');
+});
+
+document.getElementById('try-download').addEventListener('click', () => {
+  alert('Download started! (This is a demo - in a real app, this would download a Markdown file)');
+});
+
+// Smooth scrolling for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function(e) {
+    e.preventDefault();
+    document.querySelector(this.getAttribute('href')).scrollIntoView({
+      behavior: 'smooth'
+    });
+  });
+});
+
+// Loading spinner animation
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .loading-spinner {
+    text-align: center;
+    margin: 2rem 0;
+  }
+  .spinner {
+    border: 4px solid rgba(94, 125, 74, 0.2);
+    border-top: 4px solid var(--primary-green);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+`;
+document.head.appendChild(style);
